@@ -161,6 +161,7 @@ class T2IAdapterUNet2DConditionModel(ModelMixin, ConfigMixin):
             kernel_size=conv_in_kernel,
             padding=conv_in_padding,
         )
+        self.adapter_features = None
 
         # time
         if time_embedding_type == "fourier":
@@ -466,6 +467,10 @@ class T2IAdapterUNet2DConditionModel(ModelMixin, ConfigMixin):
         ):
             module.gradient_checkpointing = value
 
+    def set_adapter_features(self, adapter_features: List[torch.Tensor]):
+
+        self.adapter_features = adapter_features
+
     def forward(
         self,
         sample: torch.FloatTensor,
@@ -476,6 +481,7 @@ class T2IAdapterUNet2DConditionModel(ModelMixin, ConfigMixin):
         attention_mask: Optional[torch.Tensor] = None,
         cross_attention_kwargs: Optional[Dict[str, Any]] = None,
         return_dict: bool = True,
+        adapter_features: Optional[List[torch.Tensor]] = None,
     ) -> Union[UNet2DConditionOutput, Tuple]:
         r"""
         Args:
@@ -517,6 +523,17 @@ class T2IAdapterUNet2DConditionModel(ModelMixin, ConfigMixin):
         if self.config.center_input_sample:
             sample = 2 * sample - 1.0
 
+        # 0.5 check if adapter feature exists as a state
+        if adapter_features is None:
+            if self.adapter_features is not None:
+                adapter_features = self.adapter_features
+            else:
+                adapter_features = None
+
+        if adapter_features is not None:
+            assert (
+                len(adapter_features) == 4
+            ), "Adapter features should be a list of 4 tensors"
         # 1. time
         timesteps = timestep
         if not torch.is_tensor(timesteps):
@@ -560,19 +577,28 @@ class T2IAdapterUNet2DConditionModel(ModelMixin, ConfigMixin):
 
         # 3. down
         down_block_res_samples = (sample,)
+        print("start")
+        idx = 0
         for downsample_block in self.down_blocks:
+
             if (
                 hasattr(downsample_block, "has_cross_attention")
                 and downsample_block.has_cross_attention
             ):
+                print("has cross attention")
                 sample, res_samples = downsample_block(
                     hidden_states=sample,
                     temb=emb,
                     encoder_hidden_states=encoder_hidden_states,
                     attention_mask=attention_mask,
                     cross_attention_kwargs=cross_attention_kwargs,
+                    adapter_states=None
+                    if adapter_features is None
+                    else adapter_features[idx].to(self.dtype),
                 )
+                idx += 1
             else:
+                print("no cross attention")
                 sample, res_samples = downsample_block(hidden_states=sample, temb=emb)
 
             down_block_res_samples += res_samples

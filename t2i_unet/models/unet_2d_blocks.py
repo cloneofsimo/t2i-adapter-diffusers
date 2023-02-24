@@ -446,6 +446,7 @@ class CrossAttnDownBlock2D(nn.Module):
         encoder_hidden_states=None,
         attention_mask=None,
         cross_attention_kwargs=None,
+        adapter_states = None
     ):
         # TODO(Patrick, William) - attention mask is not used
         output_states = ()
@@ -480,11 +481,14 @@ class CrossAttnDownBlock2D(nn.Module):
                 ).sample
 
             output_states += (hidden_states,)
+        
+        if adapter_states is not None:
+            hidden_states = hidden_states + adapter_states
 
         if self.downsamplers is not None:
             for downsampler in self.downsamplers:
                 hidden_states = downsampler(hidden_states)
-
+                print("downsampler")
             output_states += (hidden_states,)
 
         return hidden_states, output_states

@@ -1,12 +1,27 @@
-from t2i_unet import T2IAdapterUNet2DConditionModel
+from t2i_unet import T2IAdapterUNet2DConditionModel, Adapter, sketch_extracter
 from diffusers import StableDiffusionPipeline, UNet2DConditionModel
 import torch
+from PIL import Image
+import numpy as np
 
 
 if __name__ == "__main__":
+    
+    # 1. Define Adapter feature extractor
+    adapter = Adapter.from_pretrained("sketch").to("cuda:1")
+    
+    # 2. Prepare Condition via adapter.
+    edge = np.array(Image.open("./edge.png").resize((512, 512)).convert("L"))/ 255.0
+    edge = torch.from_numpy(edge).unsqueeze(0).unsqueeze(0).to("cuda:1")
+    edge = (edge > 0.5).float()
+    with torch.no_grad():
+        adapter_features = adapter(edge)
+    
+    
+    
     model_id = "runwayml/stable-diffusion-v1-5"
 
-    x = T2IAdapterUNet2DConditionModel.from_config(
+    a_unet = T2IAdapterUNet2DConditionModel.from_config(
         {
             "act_fn": "silu",
             "attention_head_dim": 8,
@@ -42,11 +57,16 @@ if __name__ == "__main__":
             "use_linear_projection": False,
         }
     )
-    x.to("cuda:1").to(torch.float16)
+    a_unet.to("cuda:1").to(torch.float16)
+    
+    
+    print(adapter_features)
+    
+    a_unet.set_adapter_features(adapter_features)
     unet2 = UNet2DConditionModel.from_pretrained(model_id, subfolder = "unet")
 
-    inf = x.load_state_dict(unet2.state_dict(), strict = False)
-
+    inf = a_unet.load_state_dict(unet2.state_dict(), strict = False)
+    a_unet.to("cuda:1").to(torch.float16)
     print(f"DONE : info : {inf}")
     
         
@@ -54,11 +74,14 @@ if __name__ == "__main__":
         "cuda:1"
     )
 
-    pipe.unet = x
-    prompt = "cute doggo"
+    pipe.unet = a_unet
+    
+    
+    
+    prompt = "cute dog in style of van gogh"
     pipe.safety_checker = None
     neg_prompt = "out of frame, duplicate, watermark "
-    torch.manual_seed(2)
+    torch.manual_seed(1)
     n = 1
     imgs = pipe(
         [prompt] * n,
@@ -69,6 +92,6 @@ if __name__ == "__main__":
         width=512,
     ).images
 
-    imgs[0].save("./contents/test.png")
+    imgs[0].save("./contents/test2.png")
 
     
