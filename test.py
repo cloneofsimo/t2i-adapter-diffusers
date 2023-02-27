@@ -11,7 +11,7 @@ if __name__ == "__main__":
     adapter = Adapter.from_pretrained("sketch").to("cuda:1")
     
     # 2. Prepare Condition via adapter.
-    edge = np.array(Image.open("./edge.png").resize((512, 512)).convert("L"))/ 255.0
+    edge = np.array(Image.open("./contents/dog_edge.png").resize((512, 512)).convert("L"))/ 255.0
     edge = torch.from_numpy(edge).unsqueeze(0).unsqueeze(0).to("cuda:1")
     edge = (edge > 0.5).float()
     with torch.no_grad():
@@ -60,11 +60,10 @@ if __name__ == "__main__":
     a_unet.to("cuda:1").to(torch.float16)
     
     
-    print(adapter_features)
-    
     a_unet.set_adapter_features(adapter_features)
+    
     unet2 = UNet2DConditionModel.from_pretrained(model_id, subfolder = "unet")
-
+    
     inf = a_unet.load_state_dict(unet2.state_dict(), strict = False)
     a_unet.to("cuda:1").to(torch.float16)
     print(f"DONE : info : {inf}")
@@ -78,7 +77,7 @@ if __name__ == "__main__":
     
     
     
-    prompt = "cute dog in style of van gogh"
+    prompt = "cute robot owl in style of van gogh"
     pipe.safety_checker = None
     neg_prompt = "out of frame, duplicate, watermark "
     torch.manual_seed(1)
@@ -87,11 +86,11 @@ if __name__ == "__main__":
         [prompt] * n,
         negative_prompt=[neg_prompt] * n,
         num_inference_steps=50,
-        guidance_scale=4.5,
+        guidance_scale=8.5,
         height=512,
         width=512,
     ).images
 
-    imgs[0].save("./contents/test2.png")
+    imgs[0].save("./contents/owl_output.png")
 
     

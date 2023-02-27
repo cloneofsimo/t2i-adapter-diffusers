@@ -577,7 +577,7 @@ class T2IAdapterUNet2DConditionModel(ModelMixin, ConfigMixin):
 
         # 3. down
         down_block_res_samples = (sample,)
-        print("start")
+        
         idx = 0
         for downsample_block in self.down_blocks:
 
@@ -585,7 +585,7 @@ class T2IAdapterUNet2DConditionModel(ModelMixin, ConfigMixin):
                 hasattr(downsample_block, "has_cross_attention")
                 and downsample_block.has_cross_attention
             ):
-                print("has cross attention")
+                
                 sample, res_samples = downsample_block(
                     hidden_states=sample,
                     temb=emb,
@@ -598,7 +598,7 @@ class T2IAdapterUNet2DConditionModel(ModelMixin, ConfigMixin):
                 )
                 idx += 1
             else:
-                print("no cross attention")
+                
                 sample, res_samples = downsample_block(hidden_states=sample, temb=emb)
 
             down_block_res_samples += res_samples
