@@ -1,4 +1,4 @@
-from t2i_adapters import T2IAdapterUNet2DConditionModel, Adapter, sketch_extracter
+from t2i_adapters import patch_pipe, Adapter, sketch_extracter
 from diffusers import StableDiffusionPipeline, UNet2DConditionModel
 import torch
 from PIL import Image
@@ -11,23 +11,12 @@ if __name__ == "__main__":
      # 0. Define model
     model_id = "runwayml/stable-diffusion-v1-5"
     model_id = "Linaqruf/anything-v3.0"
-    unet2 = UNet2DConditionModel.from_pretrained(model_id, subfolder = "unet")
-    a_unet = T2IAdapterUNet2DConditionModel.from_config(
-        unet2.config
-    )
-    a_unet.to(device).to(torch.float16)
     
-    inf = a_unet.load_state_dict(unet2.state_dict(), strict = False)
-    a_unet.to(device).to(torch.float16)
-    print(f"DONE : info : {inf}")
-        
-    del unet2
-
     pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16).to(
         device
     )
     
-    pipe.unet = a_unet
+    patch_pipe(pipe)
     from lora_diffusion import LoRAManager
     manager = LoRAManager(["./contents/lora_krk.safetensors"], pipe)
     # 1. Define Adapter feature extractor
@@ -53,7 +42,7 @@ if __name__ == "__main__":
         with torch.no_grad():
             adapter_features = adapter(cond_img)
             
-        a_unet.set_adapter_features(adapter_features)
+        pipe.unet.set_adapter_features(adapter_features)
     
         pipe.safety_checker = None
         neg_prompt = "out of frame, duplicate, watermark "
