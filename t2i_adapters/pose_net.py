@@ -167,7 +167,7 @@ class PoseExtractor:
         image = resize_numpy_image(image, max_resolution=self.config.max_resolution)
         mmdet_results = inference_detector(self.det_model, image)
         # keep the person class bounding boxes.
-        person_results = process_mmdet_results(mmdet_results, config.det_cat_id)
+        person_results = process_mmdet_results(mmdet_results, self.config.det_cat_id)
 
         # optional
         return_heatmap = False
