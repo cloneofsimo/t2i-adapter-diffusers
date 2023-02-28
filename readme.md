@@ -1,6 +1,12 @@
 # T2I Adapter Diffusers
 
-Developer-friendly port of the [T2I-Adapter](https://github.com/TencentARC/T2I-Adapter), [Paper](https://arxiv.org/abs/2302.08453) to `diffusers`. As a result, you are able to use all the pipelines at diffusers.
+Developer-friendly port of the [T2I-Adapter](https://github.com/TencentARC/T2I-Adapter), [Paper](https://arxiv.org/abs/2302.08453) to `diffusers`. As a result, you are able to use all the pipelines at diffusers. You can also use my [LoRA](https://github.com/cloneofsimo/lora).
+
+<!-- #region -->
+<p align="center">
+<img src="contents/keypose_lora.jpg">
+</p>
+<!-- #endregion -->
 
 ## Installation
 
@@ -10,7 +16,7 @@ pip install git+https://github.com/cloneofsimo/t2i-adapter-diffusers
 
 ## Usage
 
-Example code Using all of the adapters is at `test_all.py`. In short, you need to substitute `UNet2DConditionModel` to `T2IAdapterUNet2DConditionModel`.
+Example code Using all of the adapters is at `test_all.py`. In short, you need to substitute `UNet2DConditionModel` to `T2IAdapterUNet2DConditionModel`. This can be done with patch_pipe.
 
 Example with keypose adapter:
 
@@ -20,7 +26,7 @@ from t2i_adapters import patch_pipe
 adapter = Adapter.from_pretrained("keypose").to(device)
 
 # prepare condition image
- cond_img = Image.open(f"./contents/examples/{ext_type}_0.png").convert("RGB")
+cond_img = Image.open(f"./contents/examples/{ext_type}_0.png").convert("RGB")
 cond_img = np.array(cond_img)/255.0
 cond_img = torch.from_numpy(cond_img).permute(2, 0, 1).unsqueeze(0).to(device).float()
 
@@ -31,6 +37,8 @@ with torch.no_grad():
 # set condition statefully. You can also call unet and make your own sampler. In that case, adapter feature attribute will be ignored.
 
 pipe.unet.set_adapter_features(adapter_features)
+
+# sample...
 ```
 
 ## References
