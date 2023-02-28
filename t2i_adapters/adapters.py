@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import Literal
+from . import T2IAdapterUNet2DConditionModel
 
 
 def conv_nd(dims, *args, **kwargs):
@@ -197,6 +198,14 @@ class Adapter(nn.Module):
         )
 
         return mod
+
+
+def patch_pipe(pipe):
+
+    a_unet = T2IAdapterUNet2DConditionModel.from_config(pipe.unet.config)
+    a_unet.load_state_dict(pipe.unet.state_dict(), strict=False)
+    a_unet.to(pipe.unet.device).to(pipe.unet.dtype).eval()
+    pipe.unet = a_unet
 
 
 if __name__ == "__main__":
