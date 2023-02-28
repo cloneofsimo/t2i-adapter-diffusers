@@ -9,7 +9,7 @@ if __name__ == "__main__":
     device = "cuda:0"
     
      # 0. Define model
-    model_id = "runwayml/stable-diffusion-v1-5"
+    
     model_id = "Linaqruf/anything-v3.0"
     
     pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16).to(
