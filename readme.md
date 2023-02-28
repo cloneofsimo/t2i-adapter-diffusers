@@ -29,22 +29,33 @@ Example with keypose adapter:
 ```python
 from t2i_adapters import patch_pipe, Adapter
 
+# 1. Define model and patch to t2i-adapter
+
+model_id = "runwayml/stable-diffusion-v1-5"
+
+pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16).to(
+    device
+)
+patch_pipe(pipe)
+
+# 2 Extract features with adapter
 adapter = Adapter.from_pretrained("keypose").to(device)
 
-# prepare condition image
+# 2.1 prepare condition image
 cond_img = Image.open(f"./contents/examples/{ext_type}_0.png").convert("RGB")
 cond_img = np.array(cond_img)/255.0
 cond_img = torch.from_numpy(cond_img).permute(2, 0, 1).unsqueeze(0).to(device).float()
 
-# prepare feature
+# 2.2 prepare feature
 with torch.no_grad():
     adapter_features = adapter(cond_img)
 
-# set condition statefully. You can also call unet and make your own sampler. In that case, adapter feature attribute will be ignored.
+# 3. set condition statefully. You can also call unet and make your own sampler. In that case, adapter feature attribute will be ignored.
 
 pipe.unet.set_adapter_features(adapter_features)
 
 # sample...
+pipe(...)
 ```
 
 ## References
