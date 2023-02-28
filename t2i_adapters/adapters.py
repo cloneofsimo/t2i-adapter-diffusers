@@ -159,10 +159,15 @@ class Adapter(nn.Module):
         return features
 
     @classmethod
-    def from_pretrained(cls, adapter_type: Literal["sketch", "seg", "keypose"]):
+    def from_pretrained(
+        cls, adapter_type: Literal["sketch", "seg", "keypose", "depth"]
+    ):
 
         WEB_PATH = {
-            "sketch": "https://huggingface.co/TencentARC/T2I-Adapter/resolve/main/models/t2iadapter_sketch_sd14v1.pth"
+            "sketch": "https://huggingface.co/TencentARC/T2I-Adapter/resolve/main/models/t2iadapter_sketch_sd14v1.pth",
+            "depth": "https://huggingface.co/TencentARC/T2I-Adapter/resolve/main/models/t2iadapter_depth_sd14v1.pth",
+            "seg": "https://huggingface.co/TencentARC/T2I-Adapter/resolve/main/models/t2iadapter_seg_sd14v1.pth",
+            "keypose": "https://huggingface.co/TencentARC/T2I-Adapter/resolve/main/models/t2iadapter_keypose_sd14v1.pth",
         }
 
         if adapter_type == "sketch":
@@ -174,16 +179,27 @@ class Adapter(nn.Module):
                 use_conv=False,
             )
 
-            mod.load_state_dict(
-                torch.hub.load_state_dict_from_url(
-                    WEB_PATH["sketch"], map_location="cpu"
-                )
+        else:
+            # all other models are in:
+            mod = Adapter(
+                cin=64 * 3,
+                channels=[320, 640, 1280, 1280],
+                nums_rb=2,
+                ksize=1,
+                sk=True,
+                use_conv=False,
             )
 
-            return mod
+        mod.load_state_dict(
+            torch.hub.load_state_dict_from_url(
+                WEB_PATH[adapter_type], map_location="cpu"
+            )
+        )
+
+        return mod
 
 
 if __name__ == "__main__":
-    
+
     model = Adapter.from_pretrained("sketch")
     print(model)
