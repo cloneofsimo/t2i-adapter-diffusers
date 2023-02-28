@@ -4,8 +4,8 @@ import pkg_resources
 from setuptools import find_packages, setup
 
 setup(
-    name="t2i_adapters_diffusers",
-    py_modules=["t2i_adapters_diffusers"],
+    name="t2i_adapters",
+    py_modules=["t2i_adapters"],
     version="0.1.0",
     description="T2I-Adapters, compatible with diffusers",
     author="Simo Ryu",
