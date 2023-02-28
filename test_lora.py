@@ -7,43 +7,50 @@ import numpy as np
 
 if __name__ == "__main__":
     device = "cuda:0"
-    
-     # 0. Define model
-    
+
+    # 0. Define model
+
     model_id = "Linaqruf/anything-v3.0"
-    
-    pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16).to(
-        device
-    )
-    
+
+    pipe = StableDiffusionPipeline.from_pretrained(
+        model_id, torch_dtype=torch.float16
+    ).to(device)
+
     patch_pipe(pipe)
-    from lora_diffusion import LoRAManager
+    from lora_diffusion import LoRAManager, image_grid
+
     manager = LoRAManager(["./contents/lora_krk.safetensors"], pipe)
     # 1. Define Adapter feature extractor
-    manager.tune([.9])
+    manager.tune([0.9])
     for ext_type, prompt in [("keypose", "a photo of <s0-0><s0-1> sitting down")]:
         adapter = Adapter.from_pretrained(ext_type).to(device)
-        
+
         # 2. Prepare Condition via adapter.
-        cond_img = Image.open(f"./contents/examples/{ext_type}_1.png")
-                        
+        cond_img_src = Image.open(f"./contents/examples/{ext_type}_1.png")
+
         if ext_type == "sketch":
-            cond_img = cond_img.convert("L")
+            cond_img = cond_img_src.convert("L")
             cond_img = np.array(cond_img) / 255.0
             cond_img = torch.from_numpy(cond_img).unsqueeze(0).unsqueeze(0).to(device)
             cond_img = (cond_img > 0.5).float()
-            
+
         else:
-            cond_img = cond_img.convert("RGB")
+            cond_img = cond_img_src.convert("RGB")
             cond_img = np.array(cond_img) / 255.0
-            
-            cond_img = torch.from_numpy(cond_img).permute(2, 0, 1).unsqueeze(0).to(device).float()
-            
+
+            cond_img = (
+                torch.from_numpy(cond_img)
+                .permute(2, 0, 1)
+                .unsqueeze(0)
+                .to(device)
+                .float()
+            )
+
         with torch.no_grad():
             adapter_features = adapter(cond_img)
-            
+
         pipe.unet.set_adapter_features(adapter_features)
-    
+
         pipe.safety_checker = None
         neg_prompt = "out of frame, duplicate, watermark "
         torch.manual_seed(1)
@@ -57,6 +64,8 @@ if __name__ == "__main__":
             width=cond_img.shape[3],
         ).images
 
-        imgs[0].save(f"./contents/{ext_type}_out_lora.png")
+        out_imgs = imgs[0]
 
-        
+        image_grid([cond_img_src, out_imgs], 1, 2).save(
+            f"./contents/{ext_type}_lora.jpg"
+        )
