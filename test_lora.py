@@ -29,7 +29,7 @@ if __name__ == "__main__":
     
     pipe.unet = a_unet
     from lora_diffusion import LoRAManager
-    manager = LoRAManager(["/home/simo/dl/lora-diffusion/exps/krk_captioned_fp16/step_700.safetensors"], pipe)
+    manager = LoRAManager(["./contents/lora_krk.safetensors"], pipe)
     # 1. Define Adapter feature extractor
     manager.tune([.9])
     for ext_type, prompt in [("keypose", "a photo of <s0-0><s0-1> sitting down")]:
