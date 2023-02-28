@@ -8,6 +8,12 @@ Developer-friendly port of the [T2I-Adapter](https://github.com/TencentARC/T2I-A
 </p>
 <!-- #endregion -->
 
+<!-- #region -->
+<p align="center">
+<img src="contents/depth_0.png">
+</p>
+<!-- #endregion -->
+
 ## Installation
 
 ```bash
@@ -21,7 +27,7 @@ Example code Using all of the adapters is at `test_all.py`. In short, you need t
 Example with keypose adapter:
 
 ```python
-from t2i_adapters import patch_pipe
+from t2i_adapters import patch_pipe, Adapter
 
 adapter = Adapter.from_pretrained("keypose").to(device)
 
